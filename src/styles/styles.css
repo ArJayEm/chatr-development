@@ -1,0 +1,15 @@
+ul.nav {
+  list-style: none;
+  float: left;
+}
+ul.nav li {
+  padding: 0 0.5em;
+}
+ul.nav li a {
+  color: #ccc;
+  text-decoration: none;
+}
+ul.nav li a.active,
+ul.nav li a:hover {
+  color: #fff !important;
+}
