@@ -8,7 +8,7 @@ import {
   googleProvider,
   facebookProvider,
   githubProvider,
-  //firestore,
+  firestore,
 } from "../firebase";
 import FacebookIcon from "mdi-react/FacebookIcon";
 import GoogleIcon from "mdi-react/GoogleIcon";
@@ -27,11 +27,7 @@ export default function Continue() {
     e.preventDefault();
 
     try {
-      setMessage("");
-      setError("");
-      setLoading(true);
       await login(emailRef.current.value, passwordRef.current.value);
-      //saveUser();      
       history("/");
     } catch (e) {
       setLoading(false);
@@ -39,8 +35,6 @@ export default function Continue() {
       return setError("Login failed. (" + e.code.replace("auth/", "") + ")");
     }
   }
-
-  //const googleAuthentication = async () => {}
 
   async function handleOnClick(provider) {
     setMessage("");
@@ -53,13 +47,43 @@ export default function Continue() {
     }
 
     try {
-      await auth.signInWithPopup(provider);
-      //saveUser();
-      history("/");
+      //check if google account already exists as email login
+      if (await checkUser((await auth.signInWithPopup(provider)).user)) {
+        history("/");
+        //return setMessage("Proceed log in");
+      } else {
+        setLoading(false);
+        return setError("Email already exists.");
+      }
     } catch (e) {
       setLoading(false);
       console.log(e);
       return setError("Login failed. (" + e.code.replace("auth/", "") + ")");
+    }
+  }
+
+  async function checkUser(user) {
+    try {
+      var isExists = false;
+      await firestore
+        .collection("users")
+        .doc(user.uid)
+        .get()
+        .then((snapshot) => {
+          if (snapshot.exists) {
+            isExists =
+              snapshot.exists &&
+              snapshot.get("providerData.providerId") ===
+                user.providerData.map((e) => e.providerId)[0];
+          }
+        });
+
+      return isExists;
+    } catch (e) {
+      setLoading(false);
+      console.log(e);
+      setError("Login failed. " + e);
+      return false;
     }
   }
 

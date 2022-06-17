@@ -1,22 +1,24 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
-import { Card, Alert, Navbar, Container, Image } from "react-bootstrap";
+import { Card, Alert } from "react-bootstrap";
 import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
 import { auth, firestore } from "../firebase";
+import Contacts from "./Contacts";
+import NavigationBar from "./NavigationBar";
 // import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function Dashboard() {
-  const { currentUser, logout } = useAuth();
-  const history = useNavigate();
+  const { currentUser } = useAuth();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const displayName = currentUser.displayName ?? currentUser.email;
 
   useEffect(() => {
+    //setLoading("Loading...");
     saveUser();
-    console.log(auth.currentUser);
-  }, []);
+    //setLoading("");
+  });
 
   async function saveUser() {
     try {
@@ -28,18 +30,26 @@ export default function Dashboard() {
 
       (await doc.get()).exists
         ? await doc.update({
+            //name: auth.currentUser.displayName ?? auth.currentUser.email,
+            //email: auth.currentUser.email,
+            //photoUrl: auth.currentUser.photoURL,
+            //uid: auth.currentUser.uid,
+            editedDate: auth.currentUser.metadata.lastSignInTime,
+            //loggedInUsing: ''
+            //createdDate: auth.currentUser.metadata.createdDate,
+            //editedDate: auth.currentUser.metadata.editedDate,
             name: auth.currentUser.displayName ?? auth.currentUser.email,
-            email: auth.currentUser.email,
-            photoUrl: auth.currentUser.photoURL,
-            uid: auth.currentUser.uid,
-            editedDate: Date.now(),
+            lastLogIn: auth.currentUser.metadata.lastSignInTime,
+            providerData: currentUser.providerData.map((e) => e)[0],
           })
         : await doc.set({
             name: auth.currentUser.displayName ?? auth.currentUser.email,
-            email: auth.currentUser.email,
-            photoUrl: auth.currentUser.photoURL,
+            //email: auth.currentUser.email,
+            //photoUrl: auth.currentUser.photoURL,
             uid: auth.currentUser.uid,
-            createdDate: Date.now(),
+            createdDate: auth.currentUser.metadata.createdDate ?? Date.now(),
+            lastLogIn: auth.currentUser.metadata.lastSignInTime ?? Date.now(),
+            providerData: currentUser.providerData.map((e) => e)[0],
           });
       setLoading(false);
     } catch (e) {
@@ -49,84 +59,17 @@ export default function Dashboard() {
     }
   }
 
-  async function handleLogout() {
-    try {
-      setMessage("");
-      setError("");
-      setLoading(true);
-      await logout();
-      history("/login");
-    } catch (e) {
-      setLoading(false);
-      console.log(e);
-      return setError("Log out failed.");
-    }
-  }
-
   return (
     <>
-      <Navbar bg="dark" variant="dark">
-        <Container>
-          <Navbar.Brand href="/">
-            <img
-              alt=""
-              src="../chatr_icon.png"
-              width="30"
-              height="30"
-              className="d-inline-block align-top"
-            />{" "}
-            Chatr
-          </Navbar.Brand>
-          <ul className="nav">
-            <li>
-              <Link className="link active" to="/">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link className="link" to="/update-profile">
-                Profile
-              </Link>
-            </li>
-            <li>
-              <Link className="link" to="/contacts">
-                Contacts
-              </Link>
-            </li>
-          </ul>
-          <ul className="nav menu">
-            <li>
-              <Link className="link" to="/notifications">
-                Notifications
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="link"
-                to=""
-                title={displayName}
-                disabled={loading}
-                onClick={handleLogout}
-              >
-                <Image
-                  roundedCircle
-                  src={auth.currentUser.photoURL.toString()}
-                  alt="PhotoURL"
-                  style={{ width: "1.5em" }}
-                />{" "}
-                Log Out
-              </Link>
-            </li>
-          </ul>
-        </Container>
-      </Navbar>
-      <Card>
+      <NavigationBar />
+      <Contacts />
+      {/* <Card>
         <Card.Body>
           {error && <Alert variant="danger">{error}</Alert>}
           {message && <Alert variant="success">{message}</Alert>}
           Welcome <strong>{displayName}</strong>
         </Card.Body>
-      </Card>
+      </Card> */}
     </>
   );
 }
