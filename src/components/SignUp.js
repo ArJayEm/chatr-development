@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Form, Button, Card, Alert, Container } from "react-bootstrap";
 import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 //import NavigationBar from "./NavigationBar";
 
 export default function SignUp() {
@@ -11,7 +11,7 @@ export default function SignUp() {
   const { signup } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const history = useNavigate();
+  //const history = useNavigate();
   const [message, setMessage] = useState("");
 
   async function handleSubmit(e) {
@@ -26,7 +26,11 @@ export default function SignUp() {
       setError("");
       setLoading(true);
       await signup(emailRef.current.value, passwordRef.current.value);
-      history("/");
+      setMessage("Registration successful!");
+      emailRef.current.value = "";
+      passwordRef.current.value = "";
+      confirmpasswordRef.current.value = "";
+      //history("/");
     } catch (e) {
       setLoading(false);
       console.log(e);

@@ -50,6 +50,8 @@ export default function Dashboard() {
             createdDate: auth.currentUser.metadata.createdDate ?? Date.now(),
             lastLogIn: auth.currentUser.metadata.lastSignInTime ?? Date.now(),
             providerData: currentUser.providerData.map((e) => e)[0],
+            userCode: null,
+            contacts: [],
           });
       setLoading(false);
     } catch (e) {

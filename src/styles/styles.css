@@ -83,6 +83,7 @@ ul#Users li {
 .page {
   padding: 8em 1em 3.5em 1em;
   justify-content: center;
+  height: 100vh;
   display: flex;
   overflow-y: auto;
   z-index: 0;

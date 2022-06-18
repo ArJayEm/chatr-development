@@ -62,11 +62,6 @@ export default function NavigationBar() {
                 Profile
               </Link>
             </li>
-            <li>
-              <Link className="link" to="/contacts">
-                Contacts
-              </Link>
-            </li>
           </ul>
           <Dropdown>
             <Dropdown.Toggle

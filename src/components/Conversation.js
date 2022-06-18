@@ -108,10 +108,10 @@ export default function Conversation() {
     <>
       <div className="page" ref={divRef}>
         <NavigationBar />
-        {error && <Alert variant="danger">{error}</Alert>}
-        {message && <Alert variant="success">{message}</Alert>}
         <div id="Conversations" className="w-100 text-center">
           <div className="contact contact_medium w-100 mb-2" style={{}}>
+            {error && <Alert variant="danger">{error}</Alert>}
+            {message && <Alert variant="success">{message}</Alert>}
             <Image
               roundedCircle
               onError={defaultUser}
@@ -119,7 +119,7 @@ export default function Conversation() {
               alt=""
               style={{ width: "3em" }}
             />
-            &nbsp;&nbsp;{contact && contact.providerData.displayName}
+            &nbsp;&nbsp;{contact && (contact.providerData.displayName || contact.name)}
           </div>
           <table>
             <tbody>

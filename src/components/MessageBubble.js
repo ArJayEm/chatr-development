@@ -75,7 +75,8 @@ export default function MessageBubble({
       //timeFormat = "";
 
       if (isSameHour) {
-        displayTime = now.getMinutes() - date.getMinutes() + " minutes ago";
+        let minutes = now.getMinutes() - date.getMinutes();
+        displayTime = minutes === 1 ? "a minute ago" : minutes + " minutes ago";
 
         if (isSameMinute) {
           displayTime = "now";
