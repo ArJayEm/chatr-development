@@ -6,6 +6,7 @@ import SearchIcon from "mdi-react/SearchIcon";
 import BarcodeScannerIcon from "mdi-react/QrcodeIcon";
 import { auth, firestore } from "../firebase";
 import defaultUser from "../images/default_user.jpg";
+import { useAuth } from "../context/AuthContext";
 
 export default function AddContact() {
   const [error, setError] = useState("");
@@ -13,11 +14,11 @@ export default function AddContact() {
   const [message, setMessage] = useState("");
   const userCodeRef = useRef("");
   const [contacts, setContacts] = useState(null);
+  const { currentUser } = useAuth();
+  const [user, setUser] = useState();
 
   var usersRef = firestore.collection("users");
-  var requestsRef = firestore
-    .collection("requests")
-    .where("deleted", "==", false);
+  //var requestsRef = firestore.collection("requests");
 
   function handleOnSearch() {
     try {
@@ -26,15 +27,41 @@ export default function AddContact() {
       setLoading(true);
       setContacts(null);
 
-      usersRef
-        .where("userCode", "==", userCodeRef.current.value)
-        .where("uid", "!=", auth.currentUser.uid)
+      firestore
+        .collection("users")
+        .doc(currentUser.uid)
         .get()
         .then((snapshot) => {
-          snapshot.docs.map((doc) => setContacts(doc.data()));
+          if (snapshot.exists) {
+            setUser(snapshot.data());
+            //snapshot.data.docs.map((e) => console.log(e));
+          }
         });
+
+      if (user.contacts > 0) {
+        firestore
+          .collection("users")
+          .where("userCode", "==", userCodeRef.current.value)
+          .where("uid", "!=", currentUser.uid)
+          .where(
+            "uid",
+            "not-in",
+            user.contacts.map((u) => u.uid)
+          )
+          .get()
+          .then((snapshot) => {
+            snapshot.docs.map((doc) => setContacts(doc.data()));
+          });
+      } else {
+        usersRef
+          .where("userCode", "==", userCodeRef.current.value)
+          .where("uid", "!=", currentUser.uid)
+          .get()
+          .then((snapshot) => {
+            snapshot.docs.map((doc) => setContacts(doc.data()));
+          });
+      }
       setLoading(false);
-      console.log(contacts);
     } catch (e) {
       setLoading(false);
       console.error(e);
@@ -51,9 +78,8 @@ export default function AddContact() {
 
       await firestore.collection("requests").add({
         createdDate: new Date(Date.now()),
-        isAccepted: false,
-        recipient: uid,
-        sender: auth.currentUser.uid,
+        to: uid,
+        from: auth.currentUser.uid,
       });
 
       setMessage("Request sent.");
@@ -65,6 +91,8 @@ export default function AddContact() {
       return false;
     }
   }
+
+  function handleOnError() {}
 
   return (
     <>
@@ -94,7 +122,7 @@ export default function AddContact() {
                 <button
                   type="button"
                   title="Search"
-                  onError=""
+                  onError={() => handleOnError}
                   onClick={handleOnSearch}
                 >
                   <SearchIcon />
@@ -109,17 +137,12 @@ export default function AddContact() {
                   {!loading &&
                     contacts &&
                     [contacts].map((contact, i) => {
-                      let isRequested =
-                        [requestsRef].map(
-                          (request) =>
-                            request.recipient === contact.uid &&
-                            request.isAccepted === false
-                        )[0] ?? false;
+                      let isRequested = false;
                       return (
                         <li id={contact.uid} key={i}>
                           <Image
                             roundedCircle
-                            onError={defaultUser}
+                            onError={() => handleOnError}
                             src={
                               (contact && contact.providerData.photoURL) ||
                               defaultUser
@@ -138,13 +161,13 @@ export default function AddContact() {
                             {contact.name}
                           </div>
                           <Button
-                            disabled={!isRequested}
-                            variant={isRequested ? "success" : "light"}
+                            disabled={isRequested}
+                            variant={isRequested ? "light" : "success"}
                             type="button"
-                            onError=""
+                            onError={() => handleOnError}
                             onClick={() => handleSendRequest(contact.uid)}
                           >
-                            {isRequested ? "Send Request" : "Request Sent"}
+                            {isRequested ? "Request Sent" : "Send Request"}
                           </Button>
                         </li>
                       );

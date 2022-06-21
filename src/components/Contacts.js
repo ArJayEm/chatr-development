@@ -1,49 +1,87 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Card, Container, Alert, Button } from "react-bootstrap";
+import { Card, Container, Alert, Button, Image } from "react-bootstrap";
 import { auth, firestore } from "../firebase";
 import AddIcon from "mdi-react/AddIcon";
+import defaultUser from "../images/default_user.jpg";
 
 export default function Contacts() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  // eslint-disable-next-line
+  const [user, setUser] = useState(null);
   const [contacts, setContacts] = useState(null);
   const history = useNavigate();
 
-  useEffect(() => {
-    getContacts();
-    //console.log(contacts);
-  }, []);
+  let usersCollection = firestore.collection("users");
 
-  async function getContacts() {
-    try {
-      setMessage("");
-      setError("");
-      setLoading(true);
+  useEffect(
+    () => {
+      getUser();
+    },
+    //eslint-disable-next-line
+    []
+  );
 
-      firestore
-        .collection("users")
-        .doc(auth.currentUser.uid)
-        .get()
-        .then((snapshot) => {
-          if (snapshot.exists) {
-            setContacts(snapshot.get("contacts").map((contact, i) => contact));
+  async function getUser() {
+    load();
+    var doc = usersCollection.doc(auth.currentUser.uid);
+
+    await doc
+      .get()
+      .then((snapshot) => {
+        if (snapshot.exists) {
+          setUser(snapshot.data());
+
+          let userContacts = snapshot.data().contacts.map((e) => e.uid) ?? [];
+          if (userContacts.length > 0) {
+            getContacts(userContacts);
           }
-        });
+        }
+        setLoading(false);
+      })
+      .finally(() => {})
+      .catch((e) => {
+        catchError(e, "get-user-error.");
+      });
+  }
 
-      setLoading(false);
-    } catch (e) {
-      setLoading(false);
-      console.log(e);
-      return setError("getContacts error.");
-    }
+  async function getContacts(userContacts) {
+    load();
+
+    await usersCollection
+      .where("uid", "in", userContacts)
+      .get()
+      .then((snapshots) => {
+        // for (var document in snapshots.docs) {
+        // }
+        setContacts(snapshots.docs.map((e) => e.data()));
+        setLoading(false);
+      })
+      .finally(() => {})
+      .catch((e) => {
+        catchError(e, "get-contacts-error.");
+      });
+  }
+
+  function load() {
+    setMessage("");
+    setError("");
+    setLoading(true);
+  }
+
+  function catchError(e, msg) {
+    setLoading(false);
+    console.log(e);
+    return setError(msg);
   }
 
   function handleOnClick(uid) {
-    console.log(uid);
     history("/conversation/" + uid);
   }
+
+  function handleOnError() {}
 
   return (
     <>
@@ -52,8 +90,6 @@ export default function Contacts() {
         style={{ minHeight: "100vh" }}
       >
         <div className="w-100" style={{ maxWidth: "400px" }}>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {message && <Alert variant="success">{message}</Alert>}
           <Card>
             <Card.Body>
               {/* <h2 className="text-center mb-4">Messages</h2> */}
@@ -67,22 +103,47 @@ export default function Contacts() {
                   Reload
                 </Link>
                 <ul id="Contacts" className="mt-2">
-                  {!loading &&
-                    contacts &&
-                    contacts.map((contact, i) => {
+                  {!loading && contacts ? (
+                    contacts.map((contact) => {
                       return (
                         <li
-                          className={i === 0 ? "active" : ""}
+                          key={contact.uid}
+                          //className={i === 0 ? "active" : ""}
                           id={contact.uid}
                           onClick={() => handleOnClick(contact.uid)}
                         >
-                          <span>{contact.name}</span>
-                          <br />
-                          <small>{"{message.last}"}</small>
+                          <div className="user-icon">
+                            <Image
+                              roundedCircle
+                              onError={() => handleOnError}
+                              src={
+                                (contact && contact.providerData.photoURL) ||
+                                defaultUser
+                              }
+                              alt="photoURL"
+                              style={{ width: "3em" }}
+                            />
+                            <span
+                              className={
+                                contact.isLoggedIn ? "logged-in" : "logged-out"
+                              }
+                            >
+                              ●
+                            </span>
+                          </div>
+                          <span>
+                            <strong>{contact.displayName}</strong>
+                            <small>{"{message.last}"}</small>
+                          </span>
                         </li>
                       );
-                    })}
+                    })
+                  ) : (
+                    <li>No Contacts yet T_T...</li>
+                  )}
                 </ul>
+                {error && <Alert variant="danger">{error}</Alert>}
+                {message && <Alert variant="success">{message}</Alert>}
               </div>
             </Card.Body>
           </Card>

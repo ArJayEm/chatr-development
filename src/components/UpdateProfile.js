@@ -21,15 +21,19 @@ export default function UpdateProfile() {
   )[0];
   //const providerId = currentUser.providerData.map((e) => e.providerId)[0];
 
-  useEffect((updatable, providerId) => {
-    //setLoading("Loading...");
-    var msg = updatable
-      ? "You registered using " + providerId + ". Can't be updated."
-      : "";
-    setMessage(msg);
-    console.log(msg);
-    //setLoading("");
-  }, []);
+  useEffect(
+    (updatable, providerId) => {
+      //setLoading("Loading...");
+      var msg = updatable
+        ? "You registered using " + providerId + ". Can't be updated."
+        : "";
+      setMessage(msg);
+      console.log(msg);
+      //setLoading("");
+    },
+    //eslint-disable-next-line
+    []
+  );
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -76,6 +80,8 @@ export default function UpdateProfile() {
       });
   }
 
+  function handleOnError() {}
+
   return (
     <>
       <NavigationBar />
@@ -92,7 +98,7 @@ export default function UpdateProfile() {
               <div className="w-100 text-center mb-2">
                 <Image
                   roundedCircle
-                  onError={defaultUser}
+                  onError={() => handleOnError}
                   src={(currentUser && currentUser.photoURL) || defaultUser}
                   alt=""
                   style={{ width: "6em" }}

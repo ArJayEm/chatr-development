@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import myIconInverted from "../images/chatr_icon_inverted.png";
 //import myIcon from "../images/chatr_icon.png";
 import defaultUser from "../images/default_user.jpg";
+import { auth, firestore } from "../firebase";
 
 export default function NavigationBar() {
   //const handleClose = () => setShow(false);
@@ -21,7 +22,11 @@ export default function NavigationBar() {
   async function handleLogout() {
     try {
       //setLoading(true);
+      var doc = firestore.collection("users").doc(auth.currentUser.uid);
       await logout();
+      await doc.update({
+        isLoggedIn: false,
+      });
       history("/login");
     } catch (e) {
       //setLoading(false);
@@ -29,6 +34,8 @@ export default function NavigationBar() {
       //return setError("Log out failed.");
     }
   }
+
+  function handleOnError() {}
 
   return (
     <div style={{ display: "inline-block" }}>
@@ -72,7 +79,7 @@ export default function NavigationBar() {
             >
               <Image
                 roundedCircle
-                onError={defaultUser}
+                onError={() => handleOnError}
                 src={(currentUser && currentUser.photoURL) || defaultUser}
                 alt="photoURL"
                 style={{ width: "1.5em" }}

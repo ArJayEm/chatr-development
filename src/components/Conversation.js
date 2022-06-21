@@ -14,28 +14,61 @@ import defaultUser from "../images/default_user.jpg";
 export default function Conversation() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  // eslint-disable-next-line
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   //const [messages, setMessages] = useState(null);
-  let { uid } = useParams();
+  let { uid: contactId } = useParams();
   const [contact, setContact] = useState();
+  //const [conversations, setConversations] = useState();
   const messageRef = useRef();
   const scrollRef = useRef();
+  //for scrolling
+  const divRef = useRef(null);
+
+  let messagesCollection = firestore.collection("messages");
+  let usersCollection = firestore.collection("users");
+
+  useEffect(
+    () => {
+      scrollToBottom();
+      getContact();
+    },
+    //eslint-disable-next-line
+    []
+  );
+
+  let filterMessages = messagesCollection.orderBy("createdDate");
+  let [conversations] = useCollectionData(filterMessages);
+
+  useEffect(
+    () => {
+      //getConversations();
+    },
+    //eslint-disable-next-line
+    []
+  );
 
   //get all messages with limit
-  var messagesCol = firestore.collection("messages");
-  var query = messagesCol.orderBy("createdDate");
-  let [conversations] = useCollectionData(query, {
-    sender: auth.currentUser.uid,
-  });
-  messagesCol.get(function (snapshot) {
-    //do whatever
-    //if (querySnapshot.docChanges)
-    let hasNewMessage = false; //[snapshot.docChanges].map((e) => e.change.type === "added");
-    //console.log([snapshot.docChanges]);
-    if (hasNewMessage) {
-      console.log("New Message!");
-    }
-  });
+  // messagesCollection
+  //   .where("from", "==", auth.currentUser.uid)
+  //   .orderBy("createdDate")
+  //   .get()
+  //   .then((snapshot) => {
+  //     if (snapshot.exists) {
+  //       setConversations(snapshot.data());
+  //     }
+  //   });
+
+  // messagesCol.get(function (snapshot) {
+  //   //do whatever
+  //   //if (querySnapshot.docChanges)
+  //   let hasNewMessage = false; //[snapshot.docChanges].map((e) => e.change.type === "added");
+  //   //console.log([snapshot.docChanges]);
+  //   if (hasNewMessage) {
+  //     console.log("New Message!");
+  //   }
+  // });
   //console.log(conversations);
   //const convos = conversations.map((message, i) => message);
   //getContactDetails();
@@ -45,25 +78,45 @@ export default function Conversation() {
   // console.log(contact.filter((e) => e.uid === uid));
 
   async function getContact() {
-    try {
-      await firestore
-        .collection("users")
-        .doc(uid)
-        .get()
-        .then((snapshot) => {
-          if (snapshot.exists) {
-            setContact(snapshot.data());
-          }
-        });
-    } catch (e) {
-      setLoading(false);
-      console.log(e);
-      setError("Login failed. " + e);
-      return false;
-    }
+    load();
+
+    await usersCollection
+      .doc(contactId)
+      .get()
+      .then((snapshot) => {
+        if (snapshot.exists) {
+          setContact(snapshot.data());
+        }
+      })
+      .finally(() => {})
+      .catch((e) => {
+        catchError(e, "get-contact-error.");
+      });
   }
 
-  async function getConversations() {}
+  // async function getConversations() {
+  //   load();
+
+  //   await messagesCollection
+  //     .where("from", "==", auth.currentUser.uid)
+  //     .where("to", "==", contactId)
+  //     .orderBy("createdDate")
+  //     .get()
+  //     .then((snapshots) => {
+  //       setConversations(
+  //         snapshots.docs.map((e) => {
+  //           let data = e.data();
+  //           data.id = e.id;
+  //           return data;
+  //         })
+  //       );
+  //       setLoading(false);
+  //     })
+  //     .finally(() => {})
+  //     .catch((e) => {
+  //       catchError(e, "Can't load conversation.");
+  //     });
+  // }
 
   async function handleOnSend(e) {
     e.preventDefault();
@@ -71,56 +124,76 @@ export default function Conversation() {
     try {
       setMessage("");
       setError("");
-      setLoading(true);
+      setSending(true);
 
-      await messagesCol.add({
+      await messagesCollection.add({
         createdDate: new Date(Date.now()),
         message: messageRef.current.value,
-        recipient: auth.currentUser.uid,
-        sender: uid,
+        to: contactId,
+        from: auth.currentUser.uid,
+        status: 0,
       });
       scrollToBottom();
       messageRef.current.value = "";
-      setLoading(false);
+      setSending(false);
     } catch (e) {
-      setLoading(false);
+      setSending(false);
       console.error(e);
       return setError("Message not sent.");
     }
   }
 
-  const divRef = useRef(null);
-  useEffect(() => {
-    //scrollToBottom();
-    getConversations();
-    getContact();
-  });
-
   function scrollToBottom() {
     scrollRef.current.scrollIntoView({
       behavior: "smooth",
-      block: "end",
-      inline: "nearest",
+      // block: "end",
+      // inline: "nearest",
     });
   }
+
+  function load() {
+    setMessage("");
+    setError("");
+    setLoading(true);
+  }
+
+  function catchError(e, msg) {
+    setLoading(false);
+    console.log(e);
+    return setError(msg);
+  }
+
+  function handleOnError() {}
 
   return (
     <>
       <div className="page" ref={divRef}>
         <NavigationBar />
         <div id="Conversations" className="w-100 text-center">
-          <div className="contact contact_medium w-100 mb-2" style={{}}>
-            {error && <Alert variant="danger">{error}</Alert>}
-            {message && <Alert variant="success">{message}</Alert>}
+          <div
+            className="contact contact_medium w-100 mb-2"
+            style={{ display: "flex" }}
+          >
             <Image
               roundedCircle
-              onError={defaultUser}
+              onError={() => handleOnError}
               src={(contact && contact.providerData.photoURL) || defaultUser}
               alt=""
               style={{ width: "3em" }}
             />
-            &nbsp;&nbsp;{contact && (contact.providerData.displayName || contact.name)}
+            &nbsp;&nbsp;
+            <div>
+              {contact &&
+                (contact.displayName || contact.providerData.displayName)}
+              {/* {contact.isLoggedIn ?? false ? (
+                <small>Online</small>
+              ) : (
+                <small>Offline</small>
+              )} */}
+            </div>
           </div>
+          {error && <Alert variant="danger">{error}</Alert>}
+          {message && <Alert variant="success">{message}</Alert>}
           <table>
             <tbody>
               {conversations &&
@@ -137,11 +210,14 @@ export default function Conversation() {
                       message={message}
                       previousMessage={previousMessage}
                       nextMessage={nextMessage}
+                      uid={auth.currentUser.uid}
+                      // ref={i === conversations.length - 1 ? scrollRef : null}
                     />
                   );
                 })}
             </tbody>
           </table>
+          <div ref={scrollRef}></div>
         </div>
         <Form id="Reply" onSubmit={handleOnSend}>
           <Form.Control
@@ -150,12 +226,11 @@ export default function Conversation() {
             placeholder="Reply..."
             required
           />
-          <Button variant="success" disabled={loading} type="submit">
+          <Button variant="success" disabled={sending} type="submit">
             Send
           </Button>
         </Form>
       </div>
-      <div ref={scrollRef}></div>
     </>
   );
 }

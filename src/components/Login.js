@@ -28,6 +28,7 @@ export default function Continue() {
 
     try {
       await login(emailRef.current.value, passwordRef.current.value);
+      saveUser();
       history("/");
     } catch (e) {
       setLoading(false);
@@ -47,14 +48,10 @@ export default function Continue() {
     }
 
     try {
-      //check if google account already exists as email login
-      if (await checkUser((await auth.signInWithPopup(provider)).user)) {
-        history("/");
-        //return setMessage("Proceed log in");
-      } else {
-        setLoading(false);
-        return setError("Email already exists.");
-      }
+      await auth.signInWithPopup(provider);
+      saveUser();
+      history("/");
+      // }
     } catch (e) {
       setLoading(false);
       console.log(e);
@@ -62,28 +59,45 @@ export default function Continue() {
     }
   }
 
-  async function checkUser(user) {
+  async function saveUser() {
     try {
-      var isExists = false;
-      await firestore
-        .collection("users")
-        .doc(user.uid)
-        .get()
-        .then((snapshot) => {
-          if (snapshot.exists) {
-            isExists =
-              snapshot.exists &&
-              snapshot.get("providerData.providerId") ===
-                user.providerData.map((e) => e.providerId)[0];
-          }
-        });
+      setMessage("");
+      setError("");
+      setLoading(true);
 
-      return isExists;
+      var doc = firestore.collection("users").doc(auth.currentUser.uid);
+
+      (await doc.get()).exists
+        ? await doc.update({
+            //displayName: auth.currentUser.displayName ?? auth.currentUser.email,
+            //email: auth.currentUser.email,
+            //photoUrl: auth.currentUser.photoURL,
+            //uid: auth.currentUser.uid,
+            editedDate: auth.currentUser.metadata.lastSignInTime,
+            //loggedInUsing: ''
+            //createdDate: auth.currentUser.metadata.createdDate,
+            //editedDate: auth.currentUser.metadata.editedDate,
+            displayName: auth.currentUser.displayName ?? auth.currentUser.email,
+            lastLogIn: auth.currentUser.metadata.lastSignInTime,
+            providerData: auth.currentUser.providerData.map((e) => e)[0],
+            isLoggedIn: true
+          })
+        : await doc.set({
+            displayName: auth.currentUser.displayName ?? auth.currentUser.email,
+            //email: auth.currentUser.email,
+            //photoUrl: auth.currentUser.photoURL,
+            uid: auth.currentUser.uid,
+            createdDate: auth.currentUser.metadata.createdDate ?? Date.now(),
+            lastLogIn: auth.currentUser.metadata.lastSignInTime ?? Date.now(),
+            providerData: auth.currentUser.providerData.map((e) => e)[0],
+            userCode: null,
+            contacts: [],
+          });
+      setLoading(false);
     } catch (e) {
       setLoading(false);
       console.log(e);
-      setError("Login failed. " + e);
-      return false;
+      return setError("Login error.");
     }
   }
 

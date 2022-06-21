@@ -39,6 +39,8 @@ ul#Users li {
   padding: 0.5em;
   cursor: pointer;
   line-height: 1;
+  display: flex;
+  column-gap: 0.5em;
 }
 ul#Contacts li.active,
 ul#Users li.active,
@@ -54,6 +56,31 @@ ul#Users li a {
 ul#Contacts li button,
 ul#Users li button {
   right: 0;
+}
+ul#Contacts li span,
+ul#Users li span {
+  display: grid;
+}
+ul#Contacts li .user-icon,
+ul#Users li .user-icon {
+  position: relative;
+}
+ul#Contacts li .user-icon span,
+ul#Users li .user-icon span {
+  position: absolute;
+  bottom: 0;
+  font-size: 1.5em;
+  right: 0;
+  display: grid;
+  text-shadow: -1px 1px 0 #ddd, 1px 1px 0 #ddd, 1px -1px 0 #ddd, -1px -1px 0 #ddd;
+}
+ul#Contacts li .user-icon span.logged-in,
+ul#Users li .user-icon span.logged-in {
+  color: #198754;
+}
+ul#Contacts li .user-icon span.logged-out,
+ul#Users li .user-icon span.logged-out {
+  color: #dc3545;
 }
 ul#Users li {
   display: flex;

@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
     var doc = firestore.collection("users").doc(auth.currentUser.uid);
     var updated = await doc
       .update({
-        name: newValue,
+        displayName: newValue,
         editedDate: editedDate,
       })
       .then(() => {

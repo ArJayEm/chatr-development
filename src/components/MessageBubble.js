@@ -1,15 +1,19 @@
 import React from "react";
 import { auth } from "../firebase";
 import { format } from "date-fns";
+import { Alert } from "react-bootstrap";
 
 export default function MessageBubble({
+  key,
   index,
   len,
   message,
   previousMessage,
   nextMessage,
+  uid,
+  ref,
 }) {
-  const isSent = message.sender !== auth.currentUser.uid;
+  const isSent = message.from === auth.currentUser.uid;
   let isPreviousSameSender = false;
   let isNextSameSender = false;
   let bubbleCounter = 0;
@@ -98,10 +102,10 @@ export default function MessageBubble({
         "MMM dd yy h:mm"
       );
     isPreviousSameSender =
-      (message.sender === previousMessage.sender &&
-        message.sender === auth.currentUser.uid) ||
-      (message.sender === previousMessage.sender &&
-        message.sender !== auth.currentUser.uid);
+      (message.from === previousMessage.from &&
+        message.from === auth.currentUser.uid) ||
+      (message.from === previousMessage.from &&
+        message.from !== auth.currentUser.uid);
     if (sameTime) {
       if (isPreviousSameSender) {
         bubbleClass = "bubble-last";
@@ -124,10 +128,10 @@ export default function MessageBubble({
         "MMM dd yy h:mm"
       );
     isNextSameSender =
-      (message.sender === nextMessage.sender &&
-        message.sender === auth.currentUser.uid) ||
-      (message.sender === nextMessage.sender &&
-        message.sender !== auth.currentUser.uid);
+      (message.from === nextMessage.from &&
+        message.from === auth.currentUser.uid) ||
+      (message.from === nextMessage.from &&
+        message.from !== auth.currentUser.uid);
     if (sameTimeNext && bubbleCounter > 0) {
       bubbleClass = "bubble-" + (isNextSameSender ? "middle" : "last");
     }
@@ -135,22 +139,26 @@ export default function MessageBubble({
 
   bubbleClass += " bubble-" + bubbleCounter;
 
-  return (
-    <>
-      {!sameTime && (
-        <tr>
+  try {
+    return (
+      <>
+        {!sameTime && (
+          <tr id={key + index}>
+            <td>
+              <small>{secondsToHms(message.createdDate.seconds)}</small>
+            </td>
+          </tr>
+        )}
+        <tr className={bubbleClass} id={key} ref={ref}>
           <td>
-            <small>{secondsToHms(message.createdDate.seconds)}</small>
+            <p className={isSent ? "sent" : "recieved"} id={key}>
+              {message.message}
+            </p>
           </td>
         </tr>
-      )}
-      <tr className={bubbleClass}>
-        <td>
-          <p className={isSent ? "sent" : "recieved"} id={message.id}>
-            {message.message}
-          </p>
-        </td>
-      </tr>
-    </>
-  );
+      </>
+    );
+  } catch (e) {
+    return <Alert variant="danger">{e.message} Can't load message</Alert>;
+  }
 }
