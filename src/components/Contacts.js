@@ -34,9 +34,13 @@ export default function Contacts() {
         if (snapshot.exists) {
           setUser(snapshot.data());
 
-          let userContacts = snapshot.data().contacts.map((e) => e.uid) ?? [];
-          if (userContacts.length > 0) {
-            getContacts(userContacts);
+          if (snapshot.data().isLoggedIn) {
+            let userContacts = snapshot.data().contacts.map((e) => e.uid) ?? [];
+            if (userContacts.length > 0) {
+              getContacts(userContacts);
+            }
+          } else {
+            history("/login");
           }
         }
         setLoading(false);
@@ -54,9 +58,8 @@ export default function Contacts() {
       .where("uid", "in", userContacts)
       .get()
       .then((snapshots) => {
-        // for (var document in snapshots.docs) {
-        // }
         setContacts(snapshots.docs.map((e) => e.data()));
+        console.log(contacts);
         setLoading(false);
       })
       .finally(() => {})

@@ -80,7 +80,7 @@ export default function Continue() {
             displayName: auth.currentUser.displayName ?? auth.currentUser.email,
             lastLogIn: auth.currentUser.metadata.lastSignInTime,
             providerData: auth.currentUser.providerData.map((e) => e)[0],
-            isLoggedIn: true
+            isLoggedIn: true,
           })
         : await doc.set({
             displayName: auth.currentUser.displayName ?? auth.currentUser.email,
@@ -92,6 +92,7 @@ export default function Continue() {
             providerData: auth.currentUser.providerData.map((e) => e)[0],
             userCode: null,
             contacts: [],
+            isLoggedIn: true,
           });
       setLoading(false);
     } catch (e) {

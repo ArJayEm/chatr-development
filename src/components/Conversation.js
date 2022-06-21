@@ -10,6 +10,7 @@ import { useCollectionData } from "react-firebase-hooks/firestore";
 
 import MessageBubble from "./MessageBubble";
 import defaultUser from "../images/default_user.jpg";
+import useScrollPosition from "./UseScrollPosition";
 
 export default function Conversation() {
   const [error, setError] = useState("");
@@ -26,28 +27,85 @@ export default function Conversation() {
   //for scrolling
   const divRef = useRef(null);
 
-  let messagesCollection = firestore.collection("messages");
+  let from = auth.currentUser.uid + " - " + contactId;
+  let to = contactId + " - " + auth.currentUser.uid;
+  let senders = [from, to];
+  let messagesCollection = firestore
+    .collection("messages")
+    // .orderBy("createdDate");
+    .where("senders", "in", senders);
+  let conversationFilter = messagesCollection;
+  let [conversations] = useCollectionData(conversationFilter);
+  let unseenFilter = messagesCollection.where("status", "==", 0);
+  let [unseen] = useCollectionData(unseenFilter);
+  //console.log([unseen].length);
+
+  // let currentPosition = window.pageYOffset;
+  // console.log(currentPosition);
+  // const [scrolling, setScrolling] = useState(false);
+  // const [scrollTop, setScrollTop] = useState(0);
+
+  // useEffect(() => {
+  //   function onScroll() {
+  //     let currentPosition = window.pageYOffset; // or use document.documentElement.scrollTop;
+  //     if (currentPosition > scrollTop) {
+  //       // downscroll code
+  //       setScrolling(false);
+  //     } else {
+  //       // upscroll code
+  //       setScrolling(true);
+  //     }
+  //     setScrollTop(currentPosition <= 0 ? 0 : currentPosition);
+  //   }
+
+  //   window.addEventListener("scroll", onScroll);
+  //   return () => window.removeEventListener("scroll", onScroll);
+  // }, [scrollTop]);
+
+  // const scrollPosition = useScrollPosition();
+  // console.log(scrollPosition);
+
+  // let sentCollection = messagesCollection.where(
+  //   "from",
+  //   "==",
+  //   auth.currentUser.uid
+  // );
+  // let recievedCollection = messagesCollection.where("from", "==", contactId);
+  // let [sentMessages] = useCollectionData(sentCollection);
+  // let [recievedMessages] = useCollectionData(recievedCollection);
+  // let [conversations] = sentMessages.concat(recievedMessages);
+  // let recievedMessages = firestore
+  //   .collection("messages")
+  //   .where("to", "==", auth.currentUser.uid)
+  //   .where("from", "==", contactId);
+  // let sentMessages = firestore
+  //   .collection("messages")
+  //   .where("from", "==", auth.currentUser.uid)
+  //   .where("to", "==", contactId);
+  // let [conversations] = useCollectionData(recievedMessages, sentMessages).sort(
+  //   (a, b) => a.createdDate - b.createdDate
+  // );
   let usersCollection = firestore.collection("users");
 
   useEffect(
     () => {
-      scrollToBottom();
       getContact();
     },
     //eslint-disable-next-line
     []
   );
 
-  let filterMessages = messagesCollection.orderBy("createdDate");
-  let [conversations] = useCollectionData(filterMessages);
-
-  useEffect(
-    () => {
-      //getConversations();
-    },
-    //eslint-disable-next-line
-    []
-  );
+  // let filterMessages = messagesCollection
+  //   // .where("from", "in", users)
+  //   // .where("to", "in", users)
+  //   // .where("from", "==", auth.currentUser.uid)
+  //   // .where("to", "==", contactId)
+  //   .orderBy("createdDate");
+  // let newMessagesCollection = messagesCollection
+  //   .where("from", "==", contactId)
+  //   .where("to", "==", auth.currentUser.uid)
+  //   .where("status", "==", 0);
+  // let [newConversations] = useCollectionData(newMessagesCollection);
 
   //get all messages with limit
   // messagesCollection
@@ -76,6 +134,14 @@ export default function Conversation() {
   // var contactRef = firestore.collection("users");
   // let [contact] = useCollectionData(contactRef, { uid: uid });
   // console.log(contact.filter((e) => e.uid === uid));
+
+  useEffect(
+    () => {
+      scrollToBottom();
+    },
+    //eslint-disable-next-line
+    []
+  );
 
   async function getContact() {
     load();
@@ -121,26 +187,30 @@ export default function Conversation() {
   async function handleOnSend(e) {
     e.preventDefault();
 
-    try {
-      setMessage("");
-      setError("");
-      setSending(true);
+    setMessage("");
+    setError("");
+    setSending(true);
 
-      await messagesCollection.add({
+    await firestore
+      .collection("messages")
+      .add({
         createdDate: new Date(Date.now()),
         message: messageRef.current.value,
         to: contactId,
         from: auth.currentUser.uid,
+        senders: from,
         status: 0,
+      })
+      .then(() => {
+        scrollToBottom();
+        messageRef.current.value = "";
+        setSending(false);
+      })
+      .catch((e) => {
+        setSending(false);
+        console.error(e);
+        return setError("Message not sent.");
       });
-      scrollToBottom();
-      messageRef.current.value = "";
-      setSending(false);
-    } catch (e) {
-      setSending(false);
-      console.error(e);
-      return setError("Message not sent.");
-    }
   }
 
   function scrollToBottom() {
@@ -149,6 +219,34 @@ export default function Conversation() {
       // block: "end",
       // inline: "nearest",
     });
+    seenNewMessages();
+  }
+
+  //wala pa sa manual scroll ng page
+  async function seenNewMessages() {
+    await unseenFilter
+      .where("to", "==", auth.currentUser.uid)
+      .get()
+      .then((snapshots) => {
+        // // for (var document in snapshots.docs) {
+        // // }
+        // snapshots.docs.forEach((snapshot) => {
+        //   //console.log(snapshot.data());
+        //   // .update({
+        //   //   status: 1,
+        //   //   //editedDate: new Date(Date.now()),
+        //   // });
+        // });
+        const updates = [];
+        snapshots.forEach((doc) =>
+          updates.push(
+            doc.ref.update({
+              status: 1,
+            })
+          )
+        );
+        Promise.all(updates);
+      });
   }
 
   function load() {
@@ -197,25 +295,51 @@ export default function Conversation() {
           <table>
             <tbody>
               {conversations &&
-                conversations.map((message, i) => {
-                  let previousMessage = i > 0 ? conversations[i - 1] : null;
+                conversations
+                  .sort((a, b) => a.createdDate - b.createdDate)
+                  .map((message, i) => {
+                    let previousMessage = i > 0 ? conversations[i - 1] : null;
+                    let nextMessage =
+                      i < conversations.length - 1
+                        ? conversations[i + 1]
+                        : null;
+
+                    return (
+                      <MessageBubble
+                        key={message.id}
+                        index={i}
+                        len={conversations.length}
+                        message={message}
+                        previousMessage={previousMessage}
+                        nextMessage={nextMessage}
+                        uid={auth.currentUser.uid}
+                        // ref={i === conversations.length - 1 ? scrollRef : null}
+                      />
+                    );
+                  })}
+            </tbody>
+            {/* <tfoot>
+              {newConversations &&
+                newConversations.map((message, i) => {
+                  let previousMessage = i > 0 ? newConversations[i - 1] : null;
                   let nextMessage =
-                    i < conversations.length - 1 ? conversations[i + 1] : null;
+                    i < newConversations.length - 1
+                      ? newConversations[i + 1]
+                      : null;
 
                   return (
                     <MessageBubble
                       key={message.id}
                       index={i}
-                      len={conversations.length}
+                      len={newConversations.length}
                       message={message}
                       previousMessage={previousMessage}
                       nextMessage={nextMessage}
                       uid={auth.currentUser.uid}
-                      // ref={i === conversations.length - 1 ? scrollRef : null}
                     />
                   );
                 })}
-            </tbody>
+            </tfoot> */}
           </table>
           <div ref={scrollRef}></div>
         </div>

@@ -20,6 +20,7 @@ export default function MessageBubble({
   let sameTime = false;
   let sameTimeNext = false;
   let bubbleClass = "";
+  let newKey = key ?? message.id + index;
 
   //function convertTime() {}
 
@@ -38,6 +39,7 @@ export default function MessageBubble({
     let isSameMinute = format(now, "m") === format(date, "m");
     let isWithinAWeek =
       isSameYear && isSameMonth && date.getDay() - now.getDay() < 8;
+    let isOneDayAgo = now.getDay() - date.getDay() === 1;
 
     if (!isSameMonth) {
       dateFormat += "MMM d";
@@ -70,24 +72,31 @@ export default function MessageBubble({
     if (format(now, "h") !== format(date, "h")) {
       //dateFormat += "h ";
     }
-    let displayTime =
-      (dateFormat.replace(/[ ]/g, "") && format(date, dateFormat) + " at ") +
-      format(date, timeFormat);
+    let displayTime = "";
 
-    if (isSameDay) {
-      //dateFormat = "";
-      //timeFormat = "";
+    if (isOneDayAgo) {
+      dateFormat = dateFormat.replace("EEE", "");
+      displayTime =
+        "Yesterday" +
+        (format(date, dateFormat) + " at ") +
+        format(date, timeFormat);
+    } else {
+      if (isSameDay) {
+        //dateFormat = "";
+        //timeFormat = "";
 
-      if (isSameHour) {
-        let minutes = now.getMinutes() - date.getMinutes();
-        displayTime = minutes === 1 ? "a minute ago" : minutes + " minutes ago";
+        if (isSameHour) {
+          let minutes = now.getMinutes() - date.getMinutes();
+          displayTime =
+            minutes === 1 ? "a minute ago" : minutes + " minutes ago";
 
-        if (isSameMinute) {
-          displayTime = "now";
+          if (isSameMinute) {
+            displayTime = "now";
+          }
         }
-      }
-      if (!isSameHour && now.getHours() - date.getHours() < 2) {
-        displayTime = "an hour ago";
+        if (!isSameHour && now.getHours() - date.getHours() < 2) {
+          displayTime = "an hour ago";
+        }
       }
     }
 
@@ -143,17 +152,15 @@ export default function MessageBubble({
     return (
       <>
         {!sameTime && (
-          <tr id={key + index}>
+          <tr id={newKey} key={newKey}>
             <td>
               <small>{secondsToHms(message.createdDate.seconds)}</small>
             </td>
           </tr>
         )}
-        <tr className={bubbleClass} id={key} ref={ref}>
+        <tr className={bubbleClass} id={message.id} key={message.id}>
           <td>
-            <p className={isSent ? "sent" : "recieved"} id={key}>
-              {message.message}
-            </p>
+            <p className={isSent ? "sent" : "recieved"}>{message.message}</p>
           </td>
         </tr>
       </>

@@ -117,6 +117,7 @@ ul#Users li {
 }
 #Conversations {
   margin-top: auto;
+  margin-bottom: 0.2m;
 }
 #Conversations table {
   width: 100%;
