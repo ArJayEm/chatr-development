@@ -1,17 +1,12 @@
-import React from "react";
-import { auth } from "../firebase";
 import { format } from "date-fns";
-import { Alert } from "react-bootstrap";
+import { auth } from "../firebase";
 
 export default function MessageBubble({
-  key,
   index,
   len,
   message,
   previousMessage,
   nextMessage,
-  uid,
-  ref,
 }) {
   const isSent = message.from === auth.currentUser.uid;
   let isPreviousSameSender = false;
@@ -20,13 +15,25 @@ export default function MessageBubble({
   let sameTime = false;
   let sameTimeNext = false;
   let bubbleClass = "";
-  let newKey = key ?? message.id + index;
+  //let newKey = message.id + index;
 
   //function convertTime() {}
 
+  // if (index === 5) {
+  //   console.log(message?.createdDate); //new Date(d * 1000)
+  // }
+
   function secondsToHms(d) {
-    let date = new Date(d * 1000); //.setUTCSeconds(d);
+    let date = new Date(d.seconds * 1000 + d.nanoseconds / 1000000); //.setUTCSeconds(d);
     let now = new Date(Date.now());
+
+    // if (index === 5) {
+    //   const fireBaseTime = date.toDateString();
+    //   const atTime = date.toLocaleTimeString();
+
+    //   console.log(fireBaseTime, atTime);
+    //   console.log(d.toDate());
+    // }
 
     let dateFormat = "";
     let timeFormat = "h:mm a";
@@ -39,7 +46,7 @@ export default function MessageBubble({
     let isSameMinute = format(now, "m") === format(date, "m");
     let isWithinAWeek =
       isSameYear && isSameMonth && date.getDay() - now.getDay() < 8;
-    let isOneDayAgo = now.getDay() - date.getDay() === 1;
+    //let isOneDayAgo = now.getDay() - date.getDay() === 1;
 
     if (!isSameMonth) {
       dateFormat += "MMM d";
@@ -73,32 +80,31 @@ export default function MessageBubble({
       //dateFormat += "h ";
     }
     let displayTime = "";
+    displayTime =
+      (dateFormat && format(date, dateFormat) + " at ") +
+      format(date, timeFormat);
 
-    if (isOneDayAgo) {
-      dateFormat = dateFormat.replace("EEE", "");
-      displayTime =
-        "Yesterday" +
-        (format(date, dateFormat) + " at ") +
-        format(date, timeFormat);
-    } else {
-      if (isSameDay) {
-        //dateFormat = "";
-        //timeFormat = "";
+    // if (isOneDayAgo) {
+    //   dateFormat = dateFormat.replace("EEE", "");
+    // displayTime =
+    //   "Yesterday" +
+    //   (format(date, dateFormat) + " at ") +
+    //   format(date, timeFormat);
+    // } else {
+    if (isSameDay) {
+      if (isSameHour) {
+        let minutes = now.getMinutes() - date.getMinutes();
+        displayTime = minutes === 1 ? "a minute ago" : minutes + " minutes ago";
 
-        if (isSameHour) {
-          let minutes = now.getMinutes() - date.getMinutes();
-          displayTime =
-            minutes === 1 ? "a minute ago" : minutes + " minutes ago";
-
-          if (isSameMinute) {
-            displayTime = "now";
-          }
-        }
-        if (!isSameHour && now.getHours() - date.getHours() < 2) {
-          displayTime = "an hour ago";
+        if (isSameMinute) {
+          displayTime = "now";
         }
       }
+      if (!isSameHour && now.getHours() - date.getHours() < 2) {
+        displayTime = "an hour ago";
+      }
     }
+    // }
 
     return displayTime;
   }
@@ -147,25 +153,57 @@ export default function MessageBubble({
   }
 
   bubbleClass += " bubble-" + bubbleCounter;
-
+  //console.log(message)
   try {
     return (
       <>
         {!sameTime && (
-          <tr id={newKey} key={newKey}>
-            <td>
-              <small>{secondsToHms(message.createdDate.seconds)}</small>
-            </td>
-          </tr>
+          <>
+            {index !== 0 && (
+              <tr>
+                <td>&nbsp;</td>
+              </tr>
+            )}
+            <tr>
+              <td>
+                <small>{secondsToHms(message.createdDate)}</small>
+              </td>
+            </tr>
+          </>
         )}
-        <tr className={bubbleClass} id={message.id} key={message.id}>
+        <tr className={bubbleClass}>
           <td>
-            <p className={isSent ? "sent" : "recieved"}>{message.message}</p>
+            <p className={isSent ? "sent" : "recieved"}>
+              {message.message} {message.status === 0}
+            </p>
           </td>
         </tr>
       </>
     );
   } catch (e) {
-    return <Alert variant="danger">{e.message} Can't load message</Alert>;
+    //console.error(e.message);
+    return (
+      <>
+        {!sameTime && (
+          <>
+            {index !== 0 && (
+              <tr>
+                <td>&nbsp;</td>
+              </tr>
+            )}
+            <tr>
+              <td>
+                <small>Can't load timestamp</small>
+              </td>
+            </tr>
+          </>
+        )}
+        <tr className={bubbleClass}>
+          <td>
+            <p className={isSent ? "sent" : "recieved"}>Can't load message</p>
+          </td>
+        </tr>
+      </>
+    );
   }
 }

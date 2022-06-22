@@ -38,69 +38,67 @@ export default function NavigationBar() {
   function handleOnError() {}
 
   return (
-    <div style={{ display: "inline-block" }}>
-      <Navbar bg="success" variant="dark">
-        <Container>
-          <ul className="nav">
-            <li>
-              <Navbar.Brand href="/">
-                <img
-                  alt=""
-                  src={myIconInverted}
-                  width="30"
-                  height="30"
-                  className="d-inline-block align-top"
-                />
-                Chatr
-              </Navbar.Brand>
-            </li>
-            <li>
-              <Link className="link active" to="/">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link className="link" to="/notifications">
-                Notifications
-              </Link>
-            </li>
-            <li>
-              <Link className="link" to="/update-profile">
-                Profile
-              </Link>
-            </li>
-          </ul>
-          <Dropdown>
-            <Dropdown.Toggle
-              variant="success"
-              id="dropdown-basic"
-              title={displayName}
-              style={{ display: "inline-flex" }}
-            >
-              <Image
-                roundedCircle
-                onError={() => handleOnError}
-                src={(currentUser && currentUser.photoURL) || defaultUser}
-                alt="photoURL"
-                style={{ width: "1.5em" }}
+    <Navbar bg="success" variant="dark">
+      <Container>
+        <ul className="nav">
+          <li>
+            <Navbar.Brand href="/">
+              <img
+                alt=""
+                src={myIconInverted}
+                width="30"
+                height="30"
+                className="d-inline-block align-top"
               />
-              &nbsp;&nbsp;
-              <div
-                style={{
-                  maxWidth: "8em",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {displayName}&nbsp;
-              </div>
-            </Dropdown.Toggle>
-            <Dropdown.Menu>
-              <Dropdown.Item onClick={handleLogout}>Log Out</Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </Container>
-      </Navbar>
-    </div>
+              Chatr
+            </Navbar.Brand>
+          </li>
+          <li>
+            <Link className="link active" to="/">
+              Home
+            </Link>
+          </li>
+          <li>
+            <Link className="link" to="/notifications">
+              Notifications
+            </Link>
+          </li>
+          <li>
+            <Link className="link" to="/update-profile">
+              Profile
+            </Link>
+          </li>
+        </ul>
+        <Dropdown>
+          <Dropdown.Toggle
+            variant="success"
+            id="dropdown-basic"
+            title={displayName}
+            style={{ display: "inline-flex" }}
+          >
+            <Image
+              roundedCircle
+              onError={() => handleOnError}
+              src={(currentUser && currentUser.photoURL) || defaultUser}
+              alt="photoURL"
+              style={{ width: "1.5em" }}
+            />
+            &nbsp;&nbsp;
+            <div
+              style={{
+                maxWidth: "8em",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {displayName}&nbsp;
+            </div>
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={handleLogout}>Log Out</Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      </Container>
+    </Navbar>
   );
 }

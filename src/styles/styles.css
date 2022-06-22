@@ -1,11 +1,9 @@
 #root {
-  display: flow-root;
+  display: grid;
   height: 100vh;
 }
 nav.navbar {
-  position: fixed;
   width: 100vw;
-  top: 0;
   left: 0;
   z-index: 2;
 }
@@ -91,8 +89,6 @@ ul#Users li {
   text-align: left;
   box-shadow: 0 0 20px #878787;
   width: 100vw !important;
-  position: fixed;
-  top: 54px;
   left: 0;
   padding: 0.5em 1em;
   background-color: #fff;
@@ -108,16 +104,12 @@ ul#Users li {
   width: 6em !important;
 }
 .page {
-  padding: 8em 1em 3.5em 1em;
-  justify-content: center;
-  height: 100vh;
-  display: flex;
-  overflow-y: auto;
-  z-index: 0;
+  display: contents;
 }
 #Conversations {
-  margin-top: auto;
-  margin-bottom: 0.2m;
+  overflow-y: auto;
+  padding: 0.5em 1em;
+  position: relative;
 }
 #Conversations table {
   width: 100%;
@@ -163,14 +155,32 @@ ul#Users li {
   color: #fff;
   background-color: #198754;
 }
+#NewMessages {
+  position: absolute;
+  bottom: 4em;
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  left: 0;
+}
+#NewMessages button {
+  border-radius: 5em;
+  /* margin: auto; */
+  border: 1px solid #eee;
+  box-shadow: 1px 2px 5px #a0adb9;
+  width: -moz-fit-content;
+  /* width: fit-content; */
+  padding: 0.3em 0.4em;
+}
 #Reply {
   width: 100vw;
-  position: fixed;
+  display: grid;
   padding: 0.5em 1em;
-  bottom: 0;
+}
+#Reply .subForm {
+  background-color: #fff;
   display: inline-flex;
   column-gap: 0.5em;
-  background-color: #fff;
 }
 .form-group {
   display: inline-flex;

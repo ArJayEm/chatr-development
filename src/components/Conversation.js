@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Alert, Form, Button, Image } from "react-bootstrap";
 import { auth, firestore } from "../firebase";
 import { useParams } from "react-router-dom";
@@ -10,7 +10,7 @@ import { useCollectionData } from "react-firebase-hooks/firestore";
 
 import MessageBubble from "./MessageBubble";
 import defaultUser from "../images/default_user.jpg";
-import useScrollPosition from "./UseScrollPosition";
+import DownIcon from "mdi-react/ArrowDownIcon";
 
 export default function Conversation() {
   const [error, setError] = useState("");
@@ -24,8 +24,7 @@ export default function Conversation() {
   //const [conversations, setConversations] = useState();
   const messageRef = useRef();
   const scrollRef = useRef();
-  //for scrolling
-  const divRef = useRef(null);
+  const [showNewMessageButton, setShowNewMessageButton] = useState(false);
 
   let from = auth.currentUser.uid + " - " + contactId;
   let to = contactId + " - " + auth.currentUser.uid;
@@ -33,12 +32,24 @@ export default function Conversation() {
   let messagesCollection = firestore
     .collection("messages")
     // .orderBy("createdDate");
-    .where("senders", "in", senders);
+    .where("senders", "in", senders); //.limit(10);
   let conversationFilter = messagesCollection;
   let [conversations] = useCollectionData(conversationFilter);
-  let unseenFilter = messagesCollection.where("status", "==", 0);
-  let [unseen] = useCollectionData(unseenFilter);
-  //console.log([unseen].length);
+  let unseenFilter = messagesCollection
+    .where("status", "==", 0)
+    .where("to", "==", auth.currentUser.uid);
+  //let [unseen] = useCollectionData(unseenFilter);
+  let unseenCount = 0; //unseen.length; //unseen.map((e) => e).length;
+  unseenFilter.get().then((snapshots) => {
+    unseenCount = snapshots.docs.length;
+    console.log(unseenCount);
+    setShowNewMessageButton(unseenCount > 0);
+  });
+  // setShowNewMessageButton(
+  //   unseenFilter.get().then((snapshots) => {
+  //     return snapshots.docs.length;
+  //   }) > 0
+  // );
 
   // let currentPosition = window.pageYOffset;
   // console.log(currentPosition);
@@ -137,9 +148,20 @@ export default function Conversation() {
 
   useEffect(
     () => {
-      scrollToBottom();
+      // if (unseenCount > 0) {
+      //   seenNewMessages();
+      // }
+      //scrollToBottom();
     },
     //eslint-disable-next-line
+    []
+  );
+
+  useLayoutEffect(
+    () => {
+      //scrollToBottom();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -222,31 +244,53 @@ export default function Conversation() {
     seenNewMessages();
   }
 
+  const listInnerRef = useRef();
+  const onScroll = () => {
+    if (listInnerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = listInnerRef.current;
+      let currentScrollPosition = Math.floor(scrollTop + clientHeight + 1);
+      let divScrollHeight = Math.floor(scrollHeight);
+      //console.log(currentScrollPosition === divScrollHeight);
+      if (currentScrollPosition === divScrollHeight) {
+        seenNewMessages();
+      }
+    }
+  };
+
   //wala pa sa manual scroll ng page
   async function seenNewMessages() {
-    await unseenFilter
-      .where("to", "==", auth.currentUser.uid)
-      .get()
-      .then((snapshots) => {
-        // // for (var document in snapshots.docs) {
-        // // }
-        // snapshots.docs.forEach((snapshot) => {
-        //   //console.log(snapshot.data());
-        //   // .update({
-        //   //   status: 1,
-        //   //   //editedDate: new Date(Date.now()),
-        //   // });
-        // });
-        const updates = [];
+    // // for (var document in snapshots.docs) {
+    // // }
+    // snapshots.docs.forEach((snapshot) => {
+    //   //console.log(snapshot.data());
+    //   // .update({
+    //   //   status: 1,
+    //   //   //editedDate: new Date(Date.now()),
+    //   // });
+    // });
+    if (unseenCount > 0) {
+      await unseenFilter.get().then((snapshots) => {
+        //console.log(snapshots.docs.length);
+        //console.log("reached bottom");
+        //console.log("seen all new messages");
+        const toBeSeen = [];
         snapshots.forEach((doc) =>
-          updates.push(
+          toBeSeen.push(
             doc.ref.update({
               status: 1,
             })
           )
         );
-        Promise.all(updates);
+        Promise.all(toBeSeen);
       });
+      unseenFilter.get().then((snapshots) => {
+        unseenCount = snapshots.docs.length;
+        console.log(unseenCount);
+        setShowNewMessageButton(unseenCount > 0);
+      });
+    } else {
+      //console.log("none to be seen");
+    }
   }
 
   function load() {
@@ -265,31 +309,37 @@ export default function Conversation() {
 
   return (
     <>
-      <div className="page" ref={divRef}>
+      <div className="page">
         <NavigationBar />
-        <div id="Conversations" className="w-100 text-center">
-          <div
-            className="contact contact_medium w-100 mb-2"
-            style={{ display: "flex" }}
-          >
-            <Image
-              roundedCircle
-              onError={() => handleOnError}
-              src={(contact && contact.providerData.photoURL) || defaultUser}
-              alt=""
-              style={{ width: "3em" }}
-            />
-            &nbsp;&nbsp;
-            <div>
-              {contact &&
-                (contact.displayName || contact.providerData.displayName)}
-              {/* {contact.isLoggedIn ?? false ? (
+        <div
+          className="contact contact_medium w-100"
+          style={{ display: "flex" }}
+        >
+          <Image
+            roundedCircle
+            onError={() => handleOnError}
+            src={(contact && contact.providerData.photoURL) || defaultUser}
+            alt=""
+            style={{ width: "3em" }}
+          />
+          &nbsp;&nbsp;
+          <div>
+            {contact &&
+              (contact.displayName || contact.providerData.displayName)}{" "}
+            {contact && contact.uid}
+            {/* {contact.isLoggedIn ?? false ? (
                 <small>Online</small>
               ) : (
                 <small>Offline</small>
               )} */}
-            </div>
           </div>
+        </div>
+        <div
+          id="Conversations"
+          className="w-100 text-center"
+          onScroll={onScroll}
+          ref={listInnerRef}
+        >
           {error && <Alert variant="danger">{error}</Alert>}
           {message && <Alert variant="success">{message}</Alert>}
           <table>
@@ -306,7 +356,7 @@ export default function Conversation() {
 
                     return (
                       <MessageBubble
-                        key={message.id}
+                        key={i}
                         index={i}
                         len={conversations.length}
                         message={message}
@@ -343,16 +393,30 @@ export default function Conversation() {
           </table>
           <div ref={scrollRef}></div>
         </div>
+        <div
+          id="NewMessages"
+          style={{ display: showNewMessageButton ? "" : "none" }}
+        >
+          <button type="button" onClick={scrollToBottom}>
+            {/* <small>
+              New Message
+              {unseenCount > 1 ? "s " : " "}
+            </small> */}
+            <DownIcon />
+          </button>
+        </div>
         <Form id="Reply" onSubmit={handleOnSend}>
-          <Form.Control
-            type="text"
-            ref={messageRef}
-            placeholder="Reply..."
-            required
-          />
-          <Button variant="success" disabled={sending} type="submit">
-            Send
-          </Button>
+          <div className="subForm">
+            <Form.Control
+              type="text"
+              ref={messageRef}
+              placeholder="Reply..."
+              required
+            />
+            <Button variant="success" disabled={sending} type="submit">
+              Send
+            </Button>
+          </div>
         </Form>
       </div>
     </>
