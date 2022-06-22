@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
-import { Alert, Form, Button, Image } from "react-bootstrap";
-import { auth, firestore } from "../firebase";
+import { useEffect, useRef, useState } from "react";
+import { Alert, Button, Form, Image } from "react-bootstrap";
 import { useParams } from "react-router-dom";
+import { auth, firestore } from "../firebase";
 import NavigationBar from "./NavigationBar";
 
 //import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 //import { format } from "date-fns";
 
-import MessageBubble from "./MessageBubble";
-import defaultUser from "../images/default_user.jpg";
 import DownIcon from "mdi-react/ArrowDownIcon";
+import defaultUser from "../images/default_user.jpg";
+import MessageBubble from "./MessageBubble";
 
 export default function Conversation() {
   const [error, setError] = useState("");
@@ -25,145 +25,65 @@ export default function Conversation() {
   const messageRef = useRef();
   const scrollRef = useRef();
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
+  const [withScroll, setWithScroll] = useState(false);
 
   let from = auth.currentUser.uid + " - " + contactId;
   let to = contactId + " - " + auth.currentUser.uid;
   let senders = [from, to];
   let messagesCollection = firestore
     .collection("messages")
-    // .orderBy("createdDate");
     .where("senders", "in", senders); //.limit(10);
   let conversationFilter = messagesCollection;
   let [conversations] = useCollectionData(conversationFilter);
   let unseenFilter = messagesCollection
     .where("status", "==", 0)
     .where("to", "==", auth.currentUser.uid);
-  //let [unseen] = useCollectionData(unseenFilter);
-  let unseenCount = 0; //unseen.length; //unseen.map((e) => e).length;
+  let unseenCount = 0;
   unseenFilter.get().then((snapshots) => {
     unseenCount = snapshots.docs.length;
-    console.log(unseenCount);
+    //console.log(unseenCount);
+    setConversationsHeight();
     setShowNewMessageButton(unseenCount > 0);
   });
-  // setShowNewMessageButton(
-  //   unseenFilter.get().then((snapshots) => {
-  //     return snapshots.docs.length;
-  //   }) > 0
-  // );
-
-  // let currentPosition = window.pageYOffset;
-  // console.log(currentPosition);
-  // const [scrolling, setScrolling] = useState(false);
-  // const [scrollTop, setScrollTop] = useState(0);
-
-  // useEffect(() => {
-  //   function onScroll() {
-  //     let currentPosition = window.pageYOffset; // or use document.documentElement.scrollTop;
-  //     if (currentPosition > scrollTop) {
-  //       // downscroll code
-  //       setScrolling(false);
-  //     } else {
-  //       // upscroll code
-  //       setScrolling(true);
-  //     }
-  //     setScrollTop(currentPosition <= 0 ? 0 : currentPosition);
-  //   }
-
-  //   window.addEventListener("scroll", onScroll);
-  //   return () => window.removeEventListener("scroll", onScroll);
-  // }, [scrollTop]);
-
-  // const scrollPosition = useScrollPosition();
-  // console.log(scrollPosition);
-
-  // let sentCollection = messagesCollection.where(
-  //   "from",
-  //   "==",
-  //   auth.currentUser.uid
-  // );
-  // let recievedCollection = messagesCollection.where("from", "==", contactId);
-  // let [sentMessages] = useCollectionData(sentCollection);
-  // let [recievedMessages] = useCollectionData(recievedCollection);
-  // let [conversations] = sentMessages.concat(recievedMessages);
-  // let recievedMessages = firestore
-  //   .collection("messages")
-  //   .where("to", "==", auth.currentUser.uid)
-  //   .where("from", "==", contactId);
-  // let sentMessages = firestore
-  //   .collection("messages")
-  //   .where("from", "==", auth.currentUser.uid)
-  //   .where("to", "==", contactId);
-  // let [conversations] = useCollectionData(recievedMessages, sentMessages).sort(
-  //   (a, b) => a.createdDate - b.createdDate
-  // );
   let usersCollection = firestore.collection("users");
 
   useEffect(
     () => {
       getContact();
+      setConversationsHeight();
     },
     //eslint-disable-next-line
     []
   );
 
-  // let filterMessages = messagesCollection
-  //   // .where("from", "in", users)
-  //   // .where("to", "in", users)
-  //   // .where("from", "==", auth.currentUser.uid)
-  //   // .where("to", "==", contactId)
-  //   .orderBy("createdDate");
-  // let newMessagesCollection = messagesCollection
-  //   .where("from", "==", contactId)
-  //   .where("to", "==", auth.currentUser.uid)
-  //   .where("status", "==", 0);
-  // let [newConversations] = useCollectionData(newMessagesCollection);
+  function setConversationsHeight() {
+    let navbarHeight =
+      document.getElementsByClassName("navbar")[0].offsetHeight;
+    let contactHeight =
+      document.getElementsByClassName("contact")[0].offsetHeight;
+    let replyHeight = document.getElementById("Reply").offsetHeight;
+    const heightToDeduct = navbarHeight + contactHeight + replyHeight;
+    //console.log(heightToDeduct);
+    let conversationsDiv = document.getElementById("Conversations");
+    conversationsDiv.style.height = window.innerHeight - heightToDeduct + "px";
 
-  //get all messages with limit
-  // messagesCollection
-  //   .where("from", "==", auth.currentUser.uid)
-  //   .orderBy("createdDate")
-  //   .get()
-  //   .then((snapshot) => {
-  //     if (snapshot.exists) {
-  //       setConversations(snapshot.data());
-  //     }
-  //   });
+    let conversationsHeight = conversationsDiv.offsetHeight;
+    let tableHeight = conversationsDiv.querySelector("table").offsetHeight;
+    //console.log(tableHeight, conversationsHeight);
 
-  // messagesCol.get(function (snapshot) {
-  //   //do whatever
-  //   //if (querySnapshot.docChanges)
-  //   let hasNewMessage = false; //[snapshot.docChanges].map((e) => e.change.type === "added");
-  //   //console.log([snapshot.docChanges]);
-  //   if (hasNewMessage) {
-  //     console.log("New Message!");
-  //   }
-  // });
-  //console.log(conversations);
-  //const convos = conversations.map((message, i) => message);
-  //getContactDetails();
+    conversationsDiv.style.display =
+      tableHeight > conversationsHeight ? "block" : "flex";
+    conversationsDiv.querySelector("table").style.alignSelf =
+      tableHeight > conversationsHeight ? "unset" : "flex-end";
 
-  // var contactRef = firestore.collection("users");
-  // let [contact] = useCollectionData(contactRef, { uid: uid });
-  // console.log(contact.filter((e) => e.uid === uid));
-
-  useEffect(
-    () => {
-      // if (unseenCount > 0) {
-      //   seenNewMessages();
-      // }
+    if (tableHeight <= conversationsHeight) {
+      setWithScroll(false);
+      seenNewMessages();
+    } else {
+      setWithScroll(true);
       //scrollToBottom();
-    },
-    //eslint-disable-next-line
-    []
-  );
-
-  useLayoutEffect(
-    () => {
-      //scrollToBottom();
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+    }
+  }
 
   async function getContact() {
     load();
@@ -181,30 +101,6 @@ export default function Conversation() {
         catchError(e, "get-contact-error.");
       });
   }
-
-  // async function getConversations() {
-  //   load();
-
-  //   await messagesCollection
-  //     .where("from", "==", auth.currentUser.uid)
-  //     .where("to", "==", contactId)
-  //     .orderBy("createdDate")
-  //     .get()
-  //     .then((snapshots) => {
-  //       setConversations(
-  //         snapshots.docs.map((e) => {
-  //           let data = e.data();
-  //           data.id = e.id;
-  //           return data;
-  //         })
-  //       );
-  //       setLoading(false);
-  //     })
-  //     .finally(() => {})
-  //     .catch((e) => {
-  //       catchError(e, "Can't load conversation.");
-  //     });
-  // }
 
   async function handleOnSend(e) {
     e.preventDefault();
@@ -224,15 +120,19 @@ export default function Conversation() {
         status: 0,
       })
       .then(() => {
-        scrollToBottom();
         messageRef.current.value = "";
-        setSending(false);
       })
       .catch((e) => {
         setSending(false);
         console.error(e);
         return setError("Message not sent.");
       });
+
+    if (!withScroll) {
+      setConversationsHeight();
+    }
+    scrollToBottom();
+    setSending(false);
   }
 
   function scrollToBottom() {
@@ -257,40 +157,30 @@ export default function Conversation() {
     }
   };
 
-  //wala pa sa manual scroll ng page
   async function seenNewMessages() {
-    // // for (var document in snapshots.docs) {
-    // // }
-    // snapshots.docs.forEach((snapshot) => {
-    //   //console.log(snapshot.data());
-    //   // .update({
-    //   //   status: 1,
-    //   //   //editedDate: new Date(Date.now()),
-    //   // });
-    // });
-    if (unseenCount > 0) {
-      await unseenFilter.get().then((snapshots) => {
-        //console.log(snapshots.docs.length);
-        //console.log("reached bottom");
-        //console.log("seen all new messages");
-        const toBeSeen = [];
-        snapshots.forEach((doc) =>
-          toBeSeen.push(
-            doc.ref.update({
-              status: 1,
-            })
-          )
-        );
-        Promise.all(toBeSeen);
-      });
-      unseenFilter.get().then((snapshots) => {
-        unseenCount = snapshots.docs.length;
-        console.log(unseenCount);
-        setShowNewMessageButton(unseenCount > 0);
-      });
-    } else {
-      //console.log("none to be seen");
-    }
+    //if (unseenCount > 0) {
+    await unseenFilter.get().then((snapshots) => {
+      //console.log(snapshots.docs.length);
+      //console.log("reached bottom");
+      //console.log("seen all new messages");
+      const toBeSeen = [];
+      snapshots.forEach((doc) =>
+        toBeSeen.push(
+          doc.ref.update({
+            status: 1,
+          })
+        )
+      );
+      Promise.all(toBeSeen);
+    });
+    unseenFilter.get().then((snapshots) => {
+      unseenCount = snapshots.docs.length;
+      //console.log(unseenCount);
+      setShowNewMessageButton(unseenCount > 0);
+    });
+    // } else {
+    //   //console.log("none to be seen");
+    // }
   }
 
   function load() {
@@ -307,6 +197,12 @@ export default function Conversation() {
 
   function handleOnError() {}
 
+  // let navbarHeight = document.getElementsByClassName("navbar").offsetHeight;
+  // let contactHeight = document.getElementsByClassName("contact").offsetHeight;
+  // let replyHeight = document.getElementById('#Reply').offsetHeight;
+  // let conversationsDiv = document.getElementById('#Conversations');
+  // console.log(navbarHeight + contactHeight + replyHeight);
+
   return (
     <>
       <div className="page">
@@ -315,23 +211,31 @@ export default function Conversation() {
           className="contact contact_medium w-100"
           style={{ display: "flex" }}
         >
-          <Image
-            roundedCircle
-            onError={() => handleOnError}
-            src={(contact && contact.providerData.photoURL) || defaultUser}
-            alt=""
-            style={{ width: "3em" }}
-          />
+          <div className="user-icon">
+            <Image
+              roundedCircle
+              onError={() => handleOnError}
+              src={(contact && contact.providerData.photoURL) || defaultUser}
+              alt=""
+              style={{ width: "3em" }}
+            />
+            <span
+              className={
+                contact && contact.isLoggedIn ? "logged-in" : "logged-out"
+              }
+            >
+              ●
+            </span>
+          </div>
           &nbsp;&nbsp;
-          <div>
+          <div style={{ display: "grid" }}>
             {contact &&
-              (contact.displayName || contact.providerData.displayName)}{" "}
-            {contact && contact.uid}
-            {/* {contact.isLoggedIn ?? false ? (
-                <small>Online</small>
-              ) : (
-                <small>Offline</small>
-              )} */}
+              (contact.displayName || contact.providerData.displayName)}
+            {contact && contact.isLoggedIn ? (
+              <strong style={{ color: "#198754" }}>Online</strong>
+            ) : (
+              <strong style={{ color: "#dc3545" }}>Offline</strong>
+            )}
           </div>
         </div>
         <div
@@ -395,7 +299,7 @@ export default function Conversation() {
         </div>
         <div
           id="NewMessages"
-          style={{ display: showNewMessageButton ? "" : "none" }}
+          style={{ display: showNewMessageButton && withScroll ? "" : "none" }}
         >
           <button type="button" onClick={scrollToBottom}>
             {/* <small>

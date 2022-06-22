@@ -96,29 +96,29 @@ ul#Contacts, ul#Users {
         span {
             display: grid;
         }
+    }
+}
 
-        .user-icon {
-            position: relative;
+.user-icon {
+    position: relative;
 
-            span {
-                position: absolute;
-                bottom: 0;
-                font-size: 1.5em;
-                right: 0;
-                display: grid;
-            text-shadow: -1px 1px 0 #ddd,
-                          1px 1px 0 #ddd,
-                         1px -1px 0 #ddd,
-                        -1px -1px 0 #ddd;
-    
-                &.logged-in {
-                    color: @bs-success;
-                }
-        
-                &.logged-out {
-                    color: @bs-danger;
-                }
-            }
+    span {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        font-size: 1.5em;
+        text-shadow: -1px 1px 0 #ddd,
+                    1px 1px 0 #ddd,
+                    1px -1px 0 #ddd,
+                    -1px -1px 0 #ddd;
+                    line-height: 1;
+
+        &.logged-in {
+            color: @bs-success;
+        }
+
+        &.logged-out {
+            color: @bs-danger;
         }
     }
 }
@@ -153,13 +153,22 @@ ul#Users {
 }
 
 .page {
-    display: contents;
+    //display: contents;
     // padding: 8em 0.5em 3.5em 1.2em;
     // justify-content: center;
-    // height: 100vh;
+    height: 100vh;
     // display: flex;
     // //overflow-y: auto;
     // z-index: 0;
+    display: list-item;
+    justify-content: flex-start;
+    position: relative;
+    overflow-y: hidden;
+    //gap: 0
+
+    & > * {
+        height: fit-content;
+    }
 }
 
 #Conversations {
@@ -167,7 +176,8 @@ ul#Users {
     overflow-y: auto;
     padding: 0.5em 1em;
     position: relative;
-
+    //height: attr(heightToDeduct); //calc(100vh - var(heightToDeduct)) !important;
+    //display: flex;
     // #ScrollRef {
     //     //width: 100vw;
     //     display: flex;
@@ -175,10 +185,21 @@ ul#Users {
 
     table {
         width: 100%;
+        //align-self: flex-end;
         //margin-bottom: 3.5em;
 
         tr {
-            &.bubble-first, &.bubble-0 {
+            &.bubble-only {
+                p {
+                    &.sent, &.recieved {
+                        border-bottom-left-radius: 1em !important;
+                        border-top-left-radius: 1em !important;
+                        border-bottom-right-radius: 1em !important;
+                        border-top-right-radius: 1em !important;
+                    }
+                };
+            }
+            &.bubble-first {
                 td p.recieved {
                     border-bottom-left-radius: 0.3em !important;
                 }
@@ -262,6 +283,9 @@ ul#Users {
     // margin-top: 0.5rem;
     display: grid;
     padding: 0.5em 1em;
+    position: absolute;
+    bottom: 0;background-color: #fff;
+
     //bottom: 0; 
 
     .subForm {

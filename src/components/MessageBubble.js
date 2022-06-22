@@ -152,7 +152,12 @@ export default function MessageBubble({
     }
   }
 
-  bubbleClass += " bubble-" + bubbleCounter;
+  // if ((!isNextSameSender) && (!isPreviousSameSender)) {
+  //   // && 
+  //   bubbleClass = "bubble-only";
+  // }
+
+  //bubbleClass = "bubble-" + bubbleCounter + " " + bubbleClass;
   //console.log(message)
   try {
     return (

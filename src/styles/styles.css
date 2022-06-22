@@ -59,25 +59,21 @@ ul#Contacts li span,
 ul#Users li span {
   display: grid;
 }
-ul#Contacts li .user-icon,
-ul#Users li .user-icon {
+.user-icon {
   position: relative;
 }
-ul#Contacts li .user-icon span,
-ul#Users li .user-icon span {
+.user-icon span {
   position: absolute;
   bottom: 0;
-  font-size: 1.5em;
   right: 0;
-  display: grid;
+  font-size: 1.5em;
   text-shadow: -1px 1px 0 #ddd, 1px 1px 0 #ddd, 1px -1px 0 #ddd, -1px -1px 0 #ddd;
+  line-height: 1;
 }
-ul#Contacts li .user-icon span.logged-in,
-ul#Users li .user-icon span.logged-in {
+.user-icon span.logged-in {
   color: #198754;
 }
-ul#Contacts li .user-icon span.logged-out,
-ul#Users li .user-icon span.logged-out {
+.user-icon span.logged-out {
   color: #dc3545;
 }
 ul#Users li {
@@ -104,7 +100,14 @@ ul#Users li {
   width: 6em !important;
 }
 .page {
-  display: contents;
+  height: 100vh;
+  display: list-item;
+  justify-content: flex-start;
+  position: relative;
+  overflow-y: hidden;
+}
+.page > * {
+  height: fit-content;
 }
 #Conversations {
   overflow-y: auto;
@@ -114,12 +117,17 @@ ul#Users li {
 #Conversations table {
   width: 100%;
 }
-#Conversations table tr.bubble-first td p.recieved,
-#Conversations table tr.bubble-0 td p.recieved {
+#Conversations table tr.bubble-only p.sent,
+#Conversations table tr.bubble-only p.recieved {
+  border-bottom-left-radius: 1em !important;
+  border-top-left-radius: 1em !important;
+  border-bottom-right-radius: 1em !important;
+  border-top-right-radius: 1em !important;
+}
+#Conversations table tr.bubble-first td p.recieved {
   border-bottom-left-radius: 0.3em !important;
 }
-#Conversations table tr.bubble-first td p.sent,
-#Conversations table tr.bubble-0 td p.sent {
+#Conversations table tr.bubble-first td p.sent {
   border-bottom-right-radius: 0.3em !important;
 }
 #Conversations table tr.bubble-middle td p.recieved {
@@ -176,6 +184,9 @@ ul#Users li {
   width: 100vw;
   display: grid;
   padding: 0.5em 1em;
+  position: absolute;
+  bottom: 0;
+  background-color: #fff;
 }
 #Reply .subForm {
   background-color: #fff;

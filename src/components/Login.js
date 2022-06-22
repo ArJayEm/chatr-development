@@ -8,7 +8,6 @@ import {
   googleProvider,
   facebookProvider,
   githubProvider,
-  firestore,
 } from "../firebase";
 import FacebookIcon from "mdi-react/FacebookIcon";
 import GoogleIcon from "mdi-react/GoogleIcon";
@@ -28,7 +27,7 @@ export default function Continue() {
 
     try {
       await login(emailRef.current.value, passwordRef.current.value);
-      saveUser();
+      //saveUser();
       history("/");
     } catch (e) {
       setLoading(false);
@@ -49,56 +48,12 @@ export default function Continue() {
 
     try {
       await auth.signInWithPopup(provider);
-      saveUser();
+      //saveUser();
       history("/");
-      // }
     } catch (e) {
       setLoading(false);
       console.log(e);
       return setError("Login failed. (" + e.code.replace("auth/", "") + ")");
-    }
-  }
-
-  async function saveUser() {
-    try {
-      setMessage("");
-      setError("");
-      setLoading(true);
-
-      var doc = firestore.collection("users").doc(auth.currentUser.uid);
-
-      (await doc.get()).exists
-        ? await doc.update({
-            //displayName: auth.currentUser.displayName ?? auth.currentUser.email,
-            //email: auth.currentUser.email,
-            //photoUrl: auth.currentUser.photoURL,
-            //uid: auth.currentUser.uid,
-            editedDate: auth.currentUser.metadata.lastSignInTime,
-            //loggedInUsing: ''
-            //createdDate: auth.currentUser.metadata.createdDate,
-            //editedDate: auth.currentUser.metadata.editedDate,
-            displayName: auth.currentUser.displayName ?? auth.currentUser.email,
-            lastLogIn: auth.currentUser.metadata.lastSignInTime,
-            providerData: auth.currentUser.providerData.map((e) => e)[0],
-            isLoggedIn: true,
-          })
-        : await doc.set({
-            displayName: auth.currentUser.displayName ?? auth.currentUser.email,
-            //email: auth.currentUser.email,
-            //photoUrl: auth.currentUser.photoURL,
-            uid: auth.currentUser.uid,
-            createdDate: auth.currentUser.metadata.createdDate ?? Date.now(),
-            lastLogIn: auth.currentUser.metadata.lastSignInTime ?? Date.now(),
-            providerData: auth.currentUser.providerData.map((e) => e)[0],
-            userCode: null,
-            contacts: [],
-            isLoggedIn: true,
-          });
-      setLoading(false);
-    } catch (e) {
-      setLoading(false);
-      console.log(e);
-      return setError("Login error.");
     }
   }
 
